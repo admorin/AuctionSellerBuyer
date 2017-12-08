@@ -226,7 +226,8 @@ public class Bank extends Thread {
         }
     }
 
-    private void getMsgFromCentral()throws ClassNotFoundException{
+    private void getMsgFromCentral()throws ClassNotFoundException
+    {
         try {
             AuctionCentral c = new AuctionCentral(new Socket(host, AUCTION_CENTRAL_PORT));
             c.start();
@@ -234,7 +235,8 @@ public class Bank extends Thread {
             System.out.println("INT BANK = " + m);
 
         }
-        catch (IOException e){
+        catch (IOException e)
+        {
 
         }
     }

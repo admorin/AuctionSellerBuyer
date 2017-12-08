@@ -1,62 +1,48 @@
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.io.Serializable;
+import java.util.LinkedList;
+
 /**
  * Created by BeauKujath on 02/12/2017.
  */
-public class House
+public class House implements Serializable
 {
+    private String houseName;
+    private LinkedList<Item> itemInv = new LinkedList<>();
 
-    private String userName;
-    private HashMap<String, Integer> items = new HashMap<>();
+    String command;
 
-
-    public House(String userName, HashMap<String, Integer> items)
+    public House(String userName)
     {
-        this.userName = userName;
-        this.items = items;
+        itemInv.add(new Item("Pizza", 50));
+        itemInv.add(new Item("Bread", 55));
+        this.houseName = userName;
     }
 
-    public String getUserName(){
-        return userName;
+    public String getName() { return houseName; }
+
+    public LinkedList<Item> getItemList() { return itemInv; }
+
+}
+
+class Item implements Serializable
+{
+    private String itemName;
+    private int minBid;
+    private int itemId;
+
+    public Item(String nameIn, int bidIn)
+    {
+        itemName = nameIn;
+        minBid = bidIn;
     }
 
-    public void addItems(HashMap<String, Integer> newItems){
-        Iterator entries = newItems.entrySet().iterator();
-        while (entries.hasNext()) {
-            Entry thisEntry = (Map.Entry) entries.next();
-            String key = (String)thisEntry.getKey();
-            Integer price = (Integer)thisEntry.getValue();
-            if(!items.containsKey(key)){
-                items.put(key, price);
-            }
-        }
+    public String getName()
+    {
+        return itemName;
     }
 
-    public Boolean placeBid(String item, Integer bid){
-        if(items.containsKey(item)){
-            Integer old = items.get(item);
-            items.replace(item, old, bid);
-            System.out.println("successfully placed new bid");
-            return  true;
-        }
-        return false;
-    }
-
-
-    public String getItemString(){
-        String s = "";
-        s += "\nItems in " + userName + ":\n";
-        int count = 1;
-        Iterator entries = items.entrySet().iterator();
-        while (entries.hasNext()) {
-            Entry thisEntry = (Map.Entry) entries.next();
-            String key = (String)thisEntry.getKey();
-            Integer price = (Integer)thisEntry.getValue();
-            s += count + ".) " + key + " -> " + price + "\n";
-            count++;
-        }
-        return s;
+    public int getMinBid()
+    {
+        return minBid;
     }
 }

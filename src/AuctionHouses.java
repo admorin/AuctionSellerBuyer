@@ -1,18 +1,16 @@
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Created by alexschmidt-gonzales on 11/30/17.
  */
-public class AuctionHouses extends Thread {
+public class AuctionHouses extends Thread
+{
 
     private int CENTRAL_PORT = 8081;
     private int PORT_NUMBER = 4200;
@@ -25,24 +23,29 @@ public class AuctionHouses extends Thread {
 
     private String[] items1 = {"Shit , $1.00 \n", "Andrews gay ass, $0.25\n", "MoreShit, $7.00\n"};
 
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         new AuctionHouses();
     }
 
-    public AuctionHouses() {
+    public AuctionHouses()
+    {
 
         start();
     }
 
 
-    public void run() {
-        try {
+    public void run()
+    {
+        try
+        {
 
 
             System.out.println("Connecting to Agent " + host + " on port " + CENTRAL_PORT + ".");
 
 
-            try {
+            try
+            {
 
 
                 centralSocket = new Socket(host, CENTRAL_PORT);
@@ -52,30 +55,30 @@ public class AuctionHouses extends Thread {
                 fromCentralServer = new ObjectInputStream(centralSocket.getInputStream());
 
 
-            } catch (UnknownHostException e) {
+            } catch (UnknownHostException e)
+            {
                 System.err.println("Unknown host: " + host);
                 System.exit(1);
-            } catch (IOException e) {
+            } catch (IOException e)
+            {
                 System.err.println("Unable to get streams from server in Auction houses");
                 System.exit(1);
             }
 
 
             Message request;
-
-            Message myName = new Message();
-            myName.username = "House";
-            myName.newHouse = true;
-            toCentralServer.writeObject(myName);
+            House test = new House("House");
+            toCentralServer.writeObject(test);
             toCentralServer.flush();
 
-            while ((request = (Message) fromCentralServer.readObject()) != null) {
+            while ((request = (Message) fromCentralServer.readObject()) != null)
+            {
 
                 System.out.println("In loop");
 
-                System.out.println(request.message);
-//
-                if (request.getItems) {
+                if (request.getItems)
+                {
+
                     Message response = new Message();
                     response.agentName = request.agentName;
                     response.fromHouse = true;
@@ -98,15 +101,13 @@ public class AuctionHouses extends Thread {
             centralSocket.close();
 
 
-        }
+        } catch (Exception e)
+        {
+            e.printStackTrace();
 
-
-            catch(Exception e){
-                e.printStackTrace();
-
-            }
         }
     }
+}
 
 
 
