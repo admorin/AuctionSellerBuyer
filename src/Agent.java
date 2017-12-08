@@ -25,6 +25,7 @@ public class Agent extends Thread {
 
     BufferedReader stdin;
     private String accountName = "";
+    private String agentThread = "";
     private int accountNumber;
     private Boolean registered = false;
     private String housePicked = "";
@@ -199,6 +200,7 @@ public class Agent extends Thread {
                 }
 
                 else if (ui.equals("View Houses")  || ui.equals("v")) {
+                    System.out.println("viewing..");
                     if(registered){
                         request = new Message();
                         request.message = "View";
@@ -222,6 +224,7 @@ public class Agent extends Thread {
                             Integer bid = Integer.parseInt(ui);
                             request.message = item;
                             request.destination = housePicked;
+                            request.agentName = agentThread;
                             request.bid = bid;
                             request.username = userName;
                             request.placeBid = true;
@@ -241,6 +244,7 @@ public class Agent extends Thread {
                             request.message = ui;
                             request.username = userName;
                             request.selectHouse = true;
+                            request.agentName = agentThread;
                             sendMsgToCentral(request);
 
                         }
@@ -304,6 +308,8 @@ public class Agent extends Thread {
                         if(server.register){
                             if(server.isMember){
                                 registered = true;
+                                agentThread = server.agentName;
+                                System.out.println("my agent thread to talk to is: " + agentThread);
                                 System.out.println("Successfully registered w/ auction central as: " + accountName);
                             } else {
                                 System.out.println("Unable to register w/ auction central as: " + accountName);

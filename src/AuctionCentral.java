@@ -35,6 +35,7 @@ public class AuctionCentral extends Thread {
     public ObjectInputStream fromBank;
 
     private final String host = "127.0.0.1";
+    private Boolean used = false;
 
 
 
@@ -42,6 +43,7 @@ public class AuctionCentral extends Thread {
 
     public static ArrayList<AuctionCentral> threads = new ArrayList<>();
     public static HashMap<Integer, AuctionCentral> registeredUsers = new HashMap<>();
+    private AgentList agentList;
     public Bank b;
     public Socket bankSocket;
 
@@ -49,6 +51,7 @@ public class AuctionCentral extends Thread {
 
     public AuctionCentral(Socket socket) {
         this.socket = socket;
+        this.agentList = AgentList.getInstance();
 
         try {
 
@@ -89,6 +92,7 @@ public class AuctionCentral extends Thread {
                 nameClients();
                 newHouseListener(newHouse);
                 newHouse = false;
+                int agentCount = 0;
                 while ((request = (Message) fromClient.readObject()) != null) {
 
                     sendlist = request.askForList;
@@ -100,11 +104,14 @@ public class AuctionCentral extends Thread {
                         response = new Message();
                         response.isList = true;
                         response.message = request.message;
+                        response.agentName = request.agentName;
                         /*
                          TODO this should tell which agent sent the initial request to the house
                          then send to that specific agent thread here not just the first one at index 0
                          */
-                        threads.get(0).agentSend(response);
+                        //threads.get(0).agentSend(response);
+                        
+                        agentMessage(response);
                     }
 
                     if(request.fromBank){
@@ -112,11 +119,13 @@ public class AuctionCentral extends Thread {
                     }
 
                     if (request.register) {
+                        agentCount++;
                         printThreads();
                         response = new Message();
+                        String name = agentList.getNextAgent();
                         this.clientBankKey = request.bankKey;
-                        this.myName = request.agentName;
-                        System.out.println("Agent Name = " + myName);
+                        this.myName = name;
+                        System.out.println("thread Agent Name = " + myName);
                         response.bankKey = request.bankKey;
                         response.agentName = request.agentName;
                         response.verify = true;
@@ -125,6 +134,7 @@ public class AuctionCentral extends Thread {
                         Message m = new Message();
                         m.isMember = result;
                         m.register = true;
+                        m.agentName = name;
                         toClient.writeObject(m);
                         toClient.flush();
                         toClient.reset();
@@ -139,9 +149,8 @@ public class AuctionCentral extends Thread {
                         m.username = request.username;
                         m.placeBid = true;
                         m.bankKey = request.bankKey;
+                        m.agentName = request.agentName;
                         bankBroadcast(m);
-
-                        // TODO fix hardcoded here to only use house 1 when a place bid is requested.
                         houseSend(request.username,request.destination, m); // the house agent wants to send to
                     }
 
@@ -159,6 +168,8 @@ public class AuctionCentral extends Thread {
                         if (request != null){
                             Message m = new Message();
                             m.getItems = true;
+                            m.agentName = request.agentName;
+                            System.out.println("Central sending a house message from thread: " + m.agentName);
                             houseSend(request.username, request.message, m);
                         }
                     } else if (selectHouse && !housesAvailable) {
@@ -192,6 +203,7 @@ public class AuctionCentral extends Thread {
         }
 
     }
+   
 
     private void printThreads(){
         System.out.println("The threads: \n");
@@ -208,10 +220,12 @@ public class AuctionCentral extends Thread {
             if (t.myName.equals("House")) {
                 t.myName = "House " + houseId++;
             }
+            /*
             else if (t.myName.equals("Agent")) {
                 t.myName = "Agent " + agentId++;
 
             }
+        */
 
         }
 
@@ -223,7 +237,7 @@ public class AuctionCentral extends Thread {
         for (AuctionCentral t : threads) {
             if(t.myName != null){
                 if (t.myName.equals(house)) {
-                    m.agentName = agent;
+                    //m.agentName = agent;
                     t.houseBroadcast(m);
                 }
             }
@@ -300,8 +314,17 @@ public class AuctionCentral extends Thread {
 
     }
 
-
-
+    
+    private void agentMessage(Message m){
+        for (AuctionCentral t : threads) {
+            if(t.myName != null){
+                if (t.myName.equals(m.agentName)) {
+                    System.out.println("yay we sending to agent: " + m.agentName);
+                    t.agentSend(m);
+                }
+            }
+        }
+    }
 
     private void agentSend(Message m){
         try {

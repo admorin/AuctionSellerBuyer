@@ -77,6 +77,7 @@ public class AuctionHouses extends Thread {
 //
                 if (request.getItems) {
                     System.out.println("sending out to agent as: " + myName);
+                    System.out.println("sending to specific agent called: " + request.agentName);
                     Message response = new Message();
                     response.agentName = request.agentName;
                     response.fromHouse = true;
@@ -89,6 +90,7 @@ public class AuctionHouses extends Thread {
                     Message response = new Message();
                     response.message = requestBid(request.message, request.bid);
                     response.fromHouse = true;
+                    response.agentName = request.agentName;
                     toCentralServer.writeObject(response);
                     toCentralServer.flush();
                 }
