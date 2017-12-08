@@ -61,9 +61,9 @@ public class AuctionCentral extends Thread {
             fromBank = new ObjectInputStream(bankSocket.getInputStream());
 
 
-
             Message user = (Message) fromClient.readObject();
-            this.myName = user.username;
+            System.out.println("initial thread name: " + user.username);
+            this.myName = user.username ;
             this.newHouse = user.newHouse;
 
 
@@ -142,7 +142,7 @@ public class AuctionCentral extends Thread {
                         bankBroadcast(m);
 
                         // TODO fix hardcoded here to only use house 1 when a place bid is requested.
-                        houseBroadcast(request.username,"House 1", m); // the house agent wants to send to
+                        houseSend(request.username,request.destination, m); // the house agent wants to send to
                     }
 
                     if (request.isMember) {
@@ -159,7 +159,7 @@ public class AuctionCentral extends Thread {
                         if (request != null){
                             Message m = new Message();
                             m.getItems = true;
-                            houseBroadcast(request.username, request.message, m);
+                            houseSend(request.username, request.message, m);
                         }
                     } else if (selectHouse && !housesAvailable) {
                         agentBroadcast("There are no houses available...");
@@ -219,7 +219,7 @@ public class AuctionCentral extends Thread {
 
 
 
-    private void houseBroadcast(String agent, String house, Message m) {
+    private void houseSend(String agent, String house, Message m) {
         for (AuctionCentral t : threads) {
             if(t.myName != null){
                 if (t.myName.equals(house)) {

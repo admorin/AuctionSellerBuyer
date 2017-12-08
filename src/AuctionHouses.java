@@ -146,7 +146,7 @@ public class AuctionHouses extends Thread {
     }
 
     private void randomItems(){
-        Random random = new Random(); // or new Random(someSeed);
+        Random random = new Random();
         String[] randItems = {"cat","dog","tree", "house", "rat", "bug", "alex" , "hat"};
         for(int i = 0; i < 5; i ++){
             int index = random.nextInt(7);

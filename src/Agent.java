@@ -27,6 +27,7 @@ public class Agent extends Thread {
     private String accountName = "";
     private int accountNumber;
     private Boolean registered = false;
+    private String housePicked = "";
 
     public static  volatile boolean changeServer;
 
@@ -220,6 +221,7 @@ public class Agent extends Thread {
                             System.out.println("bid amount: "  + ui);
                             Integer bid = Integer.parseInt(ui);
                             request.message = item;
+                            request.destination = housePicked;
                             request.bid = bid;
                             request.username = userName;
                             request.placeBid = true;
@@ -235,6 +237,7 @@ public class Agent extends Thread {
                         request = new Message();
                         if ((ui = stdin.readLine()) != null) {
                             System.out.println("you chose: "  + ui);
+                            housePicked = ui;
                             request.message = ui;
                             request.username = userName;
                             request.selectHouse = true;
