@@ -29,7 +29,7 @@ public class Account extends HashMap{
         this.encrypt = new Encrypt(clientNumber.toString());
         this.MY_PRIVATE_KEY = encrypt.getPrivate();
         this.MY_PUBLIC_KEY = encrypt.getPublic();
-        int initialDeposit = 5;
+        int initialDeposit = 60;
         this.balance = initialDeposit;
 
         System.out.println("Account ["+clientName+"] has been created...");
@@ -81,11 +81,20 @@ public class Account extends HashMap{
         return x;
     }
 
-    public void placeHold(Integer bid){
+    public Boolean placeHold(Integer bid){
         System.out.println("bid is " + bid);
         System.out.println("placed hold on account of bid value: " + bid.intValue());
-        balance -= bid;
-        System.out.println("account balance now is: " + balance);
+        if(bid > balance){
+            System.out.println(clientName + " does not have enough money to bid " + bid);
+            System.out.println("account balance is: " + balance);
+            return false;
+        } else {
+            balance -= bid;
+            System.out.println("account balance now is: " + balance);
+            return true;
+        }
+
+
     }
 
     public int makeKey(){

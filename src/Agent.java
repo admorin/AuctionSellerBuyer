@@ -2,11 +2,9 @@ import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Scanner;
-import java.util.stream.Stream;
 
 public class Agent extends Thread {
-    public String agentName;
+    public String userName;
     private String initBid;
     private static int BANK_PORT = 8080;
     private static int CENTRAL_PORT = 8081;
@@ -26,6 +24,9 @@ public class Agent extends Thread {
     ObjectInputStream fromCentralServer;
 
     BufferedReader stdin;
+    private String accountName = "";
+    private int accountNumber;
+    private Boolean registered = false;
 
     public static  volatile boolean changeServer;
 
@@ -35,18 +36,13 @@ public class Agent extends Thread {
 
     public static void main(String args[]) {
 
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Please Enter Name: ");
-        String name = scanner.nextLine();
-        if(name != null){
-            new Agent(name);
-        }
+        new Agent("ALEX");
 
     }
 
     public Agent(String userName){
 
-        this.agentName = "Agent " + userName;
+        this.userName = userName;
 
         start();
 
@@ -84,10 +80,7 @@ public class Agent extends Thread {
         System.out.println("Connecting to host " + host + " on ports " + BANK_PORT + ", " + CENTRAL_PORT);
         try {
             bankSocket = new Socket(host, BANK_PORT);
-
             centralSocket = new Socket(host, CENTRAL_PORT);
-            //bankSocket.connect(centralSocket.getLocalSocketAddress());
-           // centralSocket = new Socket(host, CENTRAL_PORT);
 
             try {
 
@@ -116,7 +109,7 @@ public class Agent extends Thread {
 
     public void run() {
 //
-       try {
+        try {
 
 
             System.out.println("Connecting to host " + host + " on ports " + BANK_PORT + ", " + CENTRAL_PORT);
@@ -150,91 +143,109 @@ public class Agent extends Thread {
                 System.exit(1);
             }
 
-            System.out.println("Options : Make Account / View Houses / Register / Select House / Place Bid");
+            System.out.println("Options : Make Account (m) / View Houses (v) / register (r)");
+            System.out.println("To return to main menu typ HOME ");
+
 
 
             Message myName = new Message();
-            myName.username = agentName;
+            myName.username = "Agent";
             sendMsgToCentral(myName);
 
             String ui;
+            Message msg;
+            Message request;
 
 
 
 
-           boolean registered = false;
+            while((ui = stdin.readLine()) != null){
 
-            while((ui = stdin.readLine()) != null) {
-
-                if (ui.equals("QUIT")) {
-                    Message msg = new Message();
+                if(ui.equals("QUIT")){
+                    msg = new Message();
                     msg.KILL = true;
                     sendMsgToBank(msg);
                     sendMsgToCentral(msg);
                     isRunning = false;
                     break;
-                } else if (ui.equalsIgnoreCase("Make Account")) {
+                }
+
+                else if (ui.equalsIgnoreCase("Make Account") || ui.equals("m")) {
 
                     System.out.println("Please Enter Name: ");
                     if ((ui = stdin.readLine()) != null) {
-                        Message request = new Message();
+                        request = new Message();
                         request.newAccount = true;
                         request.username = ui;
+                        accountName = ui;
                         sendMsgToBank(request);
-                        registered = true;
+                        printOptions();
                     }
-                } else if (ui.equalsIgnoreCase("Register")) {
+                }
 
-                    System.out.println("Please Provide Name and Bank Key: ");
-                    if ((ui = stdin.readLine()) != null) {
-                        String temp = ui;
-                        Message request = new Message();
+                else if (ui.equalsIgnoreCase("Register") || ui.equalsIgnoreCase("r")) {
+
+                    System.out.println("Please Provide Bank Key: ");
+                    if((ui = stdin.readLine()) != null){
+                        request = new Message();
                         request.register = true;
-                        request.username = ui;
-
-                        registered = true;
+                        Integer bankKey = Integer.parseInt(ui);
+                        request.bankKey = bankKey;
+                        accountNumber = bankKey;
+                        request.agentName = "Agent";
                         sendMsgToCentral(request);
                     }
+                }
 
-                } else if (ui.equals("View Houses") ){//&& registered) {
-
-                    Message request = new Message();
-                    request.message = "View";
-                    //central.username = "Agent";
-                    request.username = agentName;
-                    request.askForList = true;
-                    sendMsgToCentral(request);
-
-                } else if (ui.equals("Select House") ){//&& registered) {
-                    System.out.println("Please Enter House Number: ");
-                    Message request = new Message();
-                    if ((ui = stdin.readLine()) != null) {
-
-                        request.selectedHouse = ui.trim();
-                        request.selectHouse = true;
-                        request.username = agentName;
-                        request.getItems = true;
-
-
+                else if (ui.equals("View Houses")  || ui.equals("v")) {
+                    if(registered){
+                        request = new Message();
+                        request.message = "View";
+                        //central.username = "Agent";
+                        request.askForList = true;
                         sendMsgToCentral(request);
-
+                    } else {
+                        System.out.println("You gotta register before you can see the houses");
+                        printOptions();
                     }
-                } else if (ui.equalsIgnoreCase("Place bid")) {
-                    Message bid = new Message();
-                    System.out.println("Please Choose House: ");
-                    if ((ui = stdin.readLine()) != null) {
-                        bid.selectedHouse = ui;
-                        bid.selectHouse = true;
-                        bid.placeBid = true;
-                        bid.username = agentName;
-                        System.out.println("Please Enter Item Number: ");
-                        if((ui = stdin.readLine()) != null) {
+                }
 
-                            bid.index = Integer.parseInt(ui);
-                            sendMsgToCentral(bid);
+                else if(ui.equalsIgnoreCase("Place bid") || ui.equalsIgnoreCase("p")){
+                    System.out.println("Enter item you would like to bid for...");
+                    if ((ui = stdin.readLine()) != null) {
+                        String item = ui;
+                        System.out.println("Enter amount you would like to bid..");
+                        request = new Message();
+                        if ((ui = stdin.readLine()) != null) {
+                            System.out.println("bid amount: "  + ui);
+                            Integer bid = Integer.parseInt(ui);
+                            request.message = item;
+                            request.bid = bid;
+                            request.username = userName;
+                            request.placeBid = true;
+                            request.username = userName;
+                            request.bankKey = accountNumber;
+                            sendMsgToCentral(request);
                         }
-
                     }
+                }
+                else if (ui.equals("Select House") || ui.equals("s")) {
+                    if(registered){
+                        System.out.println("Please Enter House Name: ");
+                        request = new Message();
+                        if ((ui = stdin.readLine()) != null) {
+                            System.out.println("you chose: "  + ui);
+                            request.message = ui;
+                            request.username = userName;
+                            request.selectHouse = true;
+                            sendMsgToCentral(request);
+
+                        }
+                    } else {
+                        System.out.println("Sorry you are not registered.");
+                        printOptions();
+                    }
+
                 }
                 else{
                     System.out.println("Please try again...");
@@ -265,15 +276,16 @@ public class Agent extends Thread {
     }
 
 
+
     class ListenFromServer extends Thread {
 
-       ObjectInputStream myServer;
-       String serverName;
+        ObjectInputStream fromServer;
+        String serverName;
 
-       public ListenFromServer(ObjectInputStream fromServer, String serverName){
-           this.myServer = fromServer;
-           this.serverName = serverName;
-       }
+        public ListenFromServer(ObjectInputStream fromServer, String serverName){
+            this.fromServer = fromServer;
+            this.serverName = serverName;
+        }
 
         public void run() {
 
@@ -281,12 +293,29 @@ public class Agent extends Thread {
 
                 try {
 
-                    Message server = (Message) myServer.readObject();
+                    Message server = (Message) fromServer.readObject();
 
                     if (server != null) {
-                       // sort(server);
-                        System.out.println(serverName + " > " + server.message);
+                        // sort(server);
 
+                        if(server.register){
+                            if(server.isMember){
+                                registered = true;
+                                System.out.println("Successfully registered w/ auction central as: " + accountName);
+                            } else {
+                                System.out.println("Unable to register w/ auction central as: " + accountName);
+                            }
+                            printOptions();
+                        } else if(server.houseList){
+                            // print house options
+                            System.out.println(server.message);
+                            printOptions();
+                        }else if(server.isList){
+                            System.out.println("Items from house: \n\n" + server.message);
+                            printOptions();
+                        } else {
+                            System.out.println(serverName + " > " + server.message);
+                        }
                     }
                 }
 
@@ -301,12 +330,32 @@ public class Agent extends Thread {
 
         }
 
-       }
+        private void sort(Message msg){
+            if(msg.agentName != null){
+                userName = msg.agentName;
+
+            }
+            else if(msg.bankKey != -1){
+                myKey = msg.bankKey;
+                System.out.println("MY KEY = " + myKey);
+            }
+
+
+        }
 
     }
 
+    private void printOptions(){
+        if(accountName.equals("")){
+            System.out.println("Options : Make Account (m) / View Bidding Houses (v) / Select House (s)");
+        }else if(!registered){
+            System.out.println("Options :  View Bidding Houses (v) / Register w Auction Central (r)");
+        } else {
+            System.out.println("Options : View Bidding Houses (v) / Select House (s) / Place Bid (p)");
+        }
+    }
 
-
+}
 
 
 

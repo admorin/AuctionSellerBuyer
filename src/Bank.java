@@ -13,7 +13,7 @@ import java.util.Random;
 public class Bank extends Thread {
 
 
-    private static HashMap<Integer, String> bankMap = new HashMap<>();
+    private static HashMap<Integer, Account> bankMap = new HashMap<>();
     private static LinkedList<Account> accounts = new LinkedList<>();
     private Socket bankSocket;
     private final int MAX_ACCOUNTS = 10000;
@@ -82,36 +82,29 @@ public class Bank extends Thread {
                         if (request.newAccount) {
                             makeAccount(request);
 
+                        }
 
+                        if(request.placeBid){
+                            System.out.println("placing a hold of " + request.bid + " on " + request.username + "'s account.");
+                            Boolean held = placeHold(request.bankKey,request.bid);
+                            if(held){
+                                System.out.println("Successfully placed a hold on the account of " + request.bid);
+                            }else {
+                                System.out.println("Not enough money to place a bid of " + request.bid);
+                            }
                         }
 
 
                         if (request.verify) {
                             Message response = new Message();
                             System.out.println("Entered If statement");
-                            clientName = "CENTRAL";
+                            this.clientName = "CENTRAL";
 
-
-                            if(bankMap.containsKey(request.bankKey)){
-                                response.isMember = true;
-                                response.message = "USER IS MEMBER";
-                                response.fromBank = true;
-                                sendMessage(response);
-
-                            }
-                            else{
-                                response.isMember = false;
-                                response.message = "User not found";
-                                sendMessage(response);
-                            }
-
-
-
-                            for(Integer i : bankMap.keySet()){
-                                System.out.println("KEYS = " + i);
-                            }
-
-                          //  }
+                            response.isMember = bankMap.containsKey(request.bankKey);
+                            response.message = "USER IS MEMBER";
+                            response.fromBank = true;
+                            sendMessage(response);
+                            //  }
 
                         }
 
@@ -135,22 +128,27 @@ public class Bank extends Thread {
             }
         }
 
-            finally{
-                try {
-                    System.out.println("Agent exiting...");
-                    threads.remove(this);
-                    toClient.close();
-                    fromClient.close();
-                    bankSocket.close();
+        finally{
+            try {
+                System.out.println("Agent exiting...");
+                threads.remove(this);
+                toClient.close();
+                fromClient.close();
+                bankSocket.close();
 
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
             }
         }
+    }
 
 
 
+    private Boolean placeHold(int bankKey, int bid){
+        Account a = bankMap.get(bankKey);
+        Boolean result = a.placeHold(bid);
+        return result;
+    }
 
 
     private void sendToCentral(){
@@ -171,8 +169,9 @@ public class Bank extends Thread {
         Message response = new Message();
         clientName = request.username;
         Account account = new Account(request.username);
-        int key = makeBankKey();
-        bankMap.put(key, clientName);
+        Integer key = makeBankKey();
+        System.out.println("key made for them: " + key);
+        bankMap.put(key, account);
         //response.message = account.returnPackage();
         response.message = "Bank key = " + key;
         response.bankKey = key;
@@ -207,7 +206,9 @@ public class Bank extends Thread {
 
     private void printAllClients(){
         for(Bank t : threads){
-            System.out.println("User " + t.clientName);
+            if(t.clientName != null){
+                System.out.println("User " + t.clientName);
+            }
 
         }
     }
@@ -261,13 +262,14 @@ public class Bank extends Thread {
 
     }
 
-    private Integer makeBankKey() {
+    private int makeBankKey() {
         Random rand = new Random();
-        Integer key = rand.nextInt(50);
+        int key = rand.nextInt(50);
         if(bankMap.containsKey(key)){
             makeBankKey();
         }
 
+        bankMap.put(key, account);
         return key;
 
     }
